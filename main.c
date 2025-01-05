@@ -93,7 +93,7 @@ void free_frame(ethernet_frame_t *frame);
 void display_frame(ethernet_frame_t *frame, int show_payload);
 pcap_if_t *find_and_display_network_interfaces(char err_buf[]);
 ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t packet_length);
-int check_if_ipv4_or_ipv6(const u_char *packet);
+int is_ipv4_or_ipv6(const u_char *packet);
 
 int main(void){
 
@@ -348,7 +348,15 @@ pcap_if_t *find_and_display_network_interfaces(char err_buf[]){
     return alldevsp;
 }
 
+// Assumes packet is ipv4 header, check is  done outside of the function
 ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t packet_length){
+
+    // Verification jic
+    int version;
+    if((version = is_ipv4_or_ipv6(frame_payload)) != IPV4){
+        fprintf(stderr, "parse_ipv4_datagram: error, wrong packet version: %d\n", version);
+        exit(EXIT_FAILURE);
+    }
 
     ipv4_datagram_t *datagram = (ipv4_datagram_t *)malloc(sizeof(ipv4_datagram_t));
 
@@ -359,13 +367,16 @@ ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t
 
     // PARSING LOGIC
     
-    // extracting version
-
+    memcpy(&datagram->version_and_ihl, frame_payload, 1);
+    memcpy(&datagram->dscp_and_ecn, frame_payload + 1, 1);
+    memcpy(&datagram->total_length, frame_payload + 2, 2);
+    memcpy(&datagram->identification, frame_payload + 4, 2);
+    
 
     return datagram;
 }
 
-int check_if_ipv4_or_ipv6(const u_char *packet){
+int is_ipv4_or_ipv6(const u_char *packet){
 
     uint8_t version;
     memcpy(&version, packet, 1);
