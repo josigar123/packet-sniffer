@@ -11,6 +11,8 @@
 #define MAX_PACKET_SIZE 65536
 #define ETHERNET_MAX_PAYLOAD 1500
 #define ETHERNET_MIN_PAYLOAD 42
+#define IPV4 4
+#define IPV6 6
 
 #define FGETS_ERROR 2
 #define INTERFACE_READ_SUCCESS 3
@@ -90,7 +92,8 @@ int is_ether_type_or_length(const u_char *packet);
 void free_frame(ethernet_frame_t *frame);
 void display_frame(ethernet_frame_t *frame, int show_payload);
 pcap_if_t *find_and_display_network_interfaces(char err_buf[]);
-ipv4_datagram_t *parse_ipv4_datagram(const u_char frame_payload, const uint16_t packet_length);
+ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t packet_length);
+int check_if_ipv4_or_ipv6(const u_char *packet);
 
 int main(void){
 
@@ -345,7 +348,7 @@ pcap_if_t *find_and_display_network_interfaces(char err_buf[]){
     return alldevsp;
 }
 
-ipv4_datagram_t *parse_ipv4_datagram(const u_char frame_payload, const uint16_t packet_length){
+ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t packet_length){
 
     ipv4_datagram_t *datagram = (ipv4_datagram_t *)malloc(sizeof(ipv4_datagram_t));
 
@@ -356,6 +359,26 @@ ipv4_datagram_t *parse_ipv4_datagram(const u_char frame_payload, const uint16_t 
 
     // PARSING LOGIC
     
+    // extracting version
+
 
     return datagram;
+}
+
+int check_if_ipv4_or_ipv6(const u_char *packet){
+
+    uint8_t version;
+    memcpy(&version, packet, 1);
+    uint8_t ip_version = version >> 4;
+    
+    if(ip_version == 4){
+        return IPV4;
+    }
+
+    if(ip_version == 6){
+        return IPV6;
+    }
+
+    fprintf(stderr, "check_if_ipv4_or_ipv6: error, something went wrong, ip_version = %d\n", ip_version);
+    return ip_version;
 }
