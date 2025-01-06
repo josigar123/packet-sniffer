@@ -95,6 +95,9 @@ pcap_if_t *find_and_display_network_interfaces(char err_buf[]);
 ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t packet_length);
 int is_ipv4_or_ipv6(const u_char *packet);
 int has_options(uint8_t ihl);
+int validate_ihl(uint8_t ihl);
+void free_ipv4_datagram(ipv4_datagram_t *datagram);
+void display_ipv4_datagram(ipv4_datagram_t *datagram);
 
 int main(void){
 
@@ -350,6 +353,7 @@ pcap_if_t *find_and_display_network_interfaces(char err_buf[]){
     return alldevsp;
 }
 
+// TODO: WRITE FUNCTION FOR FREEING DGRAM
 // Assumes packet is ipv4 header, check is  done outside of the function
 ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t packet_length){
 
@@ -382,6 +386,11 @@ ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t
 
     uint8_t ihl = (datagram->version_and_ihl & 0x0F); // ihl is last 4 bits
     if(has_options(ihl)){
+
+        if(!validate_ihl(ihl)){
+            fprintf(stderr, "invalid ihl value: %d\n", ihl);
+            exit(EXIT_FAILURE);
+        }
         size_t options_length = (ihl - 5) * 4;
         datagram->options = (uint8_t *)malloc(options_length);
         if(datagram->options == NULL){
@@ -392,10 +401,23 @@ ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t
         datagram->options_length = options_length;
 
         // PARSE RESTEN AV DGRAM, MED HEADER LENGDE: 20 + options_length
+        size_t payload_length = datagram->total_length - 20 - options_length;
+        datagram->payload = (uint8_t *)malloc(payload_length);
+        if(datagram->payload == NULL){
+            fprintf(stderr, "parse_ipv4_datagram: memory allocation failed for payload\n");
+            exit(EXIT_FAILURE);
+        }
+    }else{ // NO OPTIONS, OBS, field will be empty
+        datagram->options = NULL;
+        datagram->options_length = -1;
 
+        size_t payload_length = datagram->total_length  - 20;
+        datagram->payload = (uint8_t *)malloc(payload_length);
+        if(datagram->payload == NULL){
+            fprintf(stderr, "parse_ipv4_datagram: memory allocation failed for payload\n");
+            exit(EXIT_FAILURE);
+        }
     }
-
-    // PARSE DGRAM OM HEADER IKKE ER TILSTEDE, ihl==5
 
     return datagram;
 }
@@ -420,4 +442,29 @@ int is_ipv4_or_ipv6(const u_char *packet){
 
 int has_options(uint8_t ihl){
     return ihl > 5;
+}
+
+int validate_ihl(uint8_t ihl){
+    return (ihl >= 5 || ihl <= 15);
+}
+
+void free_ipv4_datagram(ipv4_datagram_t *datagram)
+{
+    if(datagram != NULL){
+        if(datagram->options != NULL){
+        free(datagram->options);
+        }
+
+        if(datagram->payload != NULL){
+        free(datagram->payload);
+        }
+
+        free(datagram);
+    }
+
+}
+
+void display_ipv4_datagram(ipv4_datagram_t *datagram)
+{
+    printf("DISPLAY");
 }
