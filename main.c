@@ -94,6 +94,7 @@ void display_frame(ethernet_frame_t *frame, int show_payload);
 pcap_if_t *find_and_display_network_interfaces(char err_buf[]);
 ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t packet_length);
 int is_ipv4_or_ipv6(const u_char *packet);
+int has_options(uint8_t ihl);
 
 int main(void){
 
@@ -219,6 +220,7 @@ ethernet_frame_t* parse_ethernet_frame(const u_char *packet, const uint16_t pack
         frame->payload = (uint8_t *)malloc(payload_length);
         if(frame->payload == NULL){
             fprintf(stderr, "Error: Memory allocation failed\n");
+            exit(EXIT_FAILURE);
         }
 
         memcpy(frame->payload, packet + 18, payload_length);
@@ -371,7 +373,29 @@ ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t
     memcpy(&datagram->dscp_and_ecn, frame_payload + 1, 1);
     memcpy(&datagram->total_length, frame_payload + 2, 2);
     memcpy(&datagram->identification, frame_payload + 4, 2);
-    
+    memcpy(&datagram->flags_and_fragment_offset, frame_payload + 6, 2);
+    memcpy(&datagram->ttl, frame_payload + 8, 1);
+    memcpy(&datagram->protocol, frame_payload + 9, 1);
+    memcpy(&datagram->header_checksum, frame_payload + 10, 2);
+    memcpy(datagram->src_addr, frame_payload + 12, 4);
+    memcpy(datagram->dest_addr, frame_payload + 16, 4);
+
+    uint8_t ihl = (datagram->version_and_ihl & 0x0F); // ihl is last 4 bits
+    if(has_options(ihl)){
+        size_t options_length = (ihl - 5) * 4;
+        datagram->options = (uint8_t *)malloc(options_length);
+        if(datagram->options == NULL){
+            fprintf(stderr, "parse_ipv4_datagram: memory allocation failed for options\n");
+            exit(EXIT_FAILURE);
+        }
+
+        datagram->options_length = options_length;
+
+        // PARSE RESTEN AV DGRAM, MED HEADER LENGDE: 20 + options_length
+
+    }
+
+    // PARSE DGRAM OM HEADER IKKE ER TILSTEDE, ihl==5
 
     return datagram;
 }
@@ -392,4 +416,8 @@ int is_ipv4_or_ipv6(const u_char *packet){
 
     fprintf(stderr, "check_if_ipv4_or_ipv6: error, something went wrong, ip_version = %d\n", ip_version);
     return ip_version;
+}
+
+int has_options(uint8_t ihl){
+    return ihl > 5;
 }
