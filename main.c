@@ -435,7 +435,7 @@ int is_ipv4_or_ipv6(const u_char *packet){
 
     uint8_t version;
     memcpy(&version, packet, 1);
-    uint8_t ip_version = version & 0xF0;
+    uint8_t ip_version = (version >> 4) & 0x0F;
     
     if(ip_version == 4){
         return IPV4;
