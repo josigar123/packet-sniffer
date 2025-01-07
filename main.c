@@ -97,7 +97,7 @@ int is_ipv4_or_ipv6(const u_char *packet);
 int has_options(uint8_t ihl);
 int validate_ihl(uint8_t ihl);
 void free_ipv4_datagram(ipv4_datagram_t *datagram);
-void display_ipv4_datagram(ipv4_datagram_t *datagram);
+void display_ipv4_datagram(ipv4_datagram_t *datagram, int show_payload);
 
 int main(void){
 
@@ -192,7 +192,10 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
         printf("\n\n");
 
         ethernet_frame_t *frame = parse_ethernet_frame(bytes, h->len);
+        ipv4_datagram_t *datagram = parse_ipv4_datagram(frame->payload, 0);
         display_frame(frame, 0);
+        display_ipv4_datagram(datagram, 0);
+        free(datagram);
         free_frame(frame);
 }
 
@@ -279,8 +282,16 @@ int is_ether_type_or_length(const u_char *packet){
 }
 
 void free_frame(ethernet_frame_t *frame){
-    free(frame->payload);
-    free(frame);
+    if(frame != NULL){
+        if(frame->payload != NULL){
+            free(frame->payload);
+        }
+        free(frame);
+    }else{
+        fprintf(stderr, "free_frame: frame is NULL\n");
+        exit(EXIT_FAILURE);
+    }
+    
 }
 
 // Assumes a valid frame
@@ -370,8 +381,6 @@ ipv4_datagram_t *parse_ipv4_datagram(const u_char *frame_payload, const uint16_t
         fprintf(stderr, "parse_ipv4_header: memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
-
-    // PARSING LOGIC
     
     memcpy(&datagram->version_and_ihl, frame_payload, 1);
     memcpy(&datagram->dscp_and_ecn, frame_payload + 1, 1);
@@ -426,7 +435,7 @@ int is_ipv4_or_ipv6(const u_char *packet){
 
     uint8_t version;
     memcpy(&version, packet, 1);
-    uint8_t ip_version = version >> 4;
+    uint8_t ip_version = version & 0xF0;
     
     if(ip_version == 4){
         return IPV4;
@@ -460,11 +469,61 @@ void free_ipv4_datagram(ipv4_datagram_t *datagram)
         }
 
         free(datagram);
+    }else{
+        fprintf(stderr, "free_ipv4_datagram: datagram is NULL\n");
+        exit(EXIT_FAILURE);
     }
 
 }
 
-void display_ipv4_datagram(ipv4_datagram_t *datagram)
-{
-    printf("DISPLAY");
+void display_ipv4_datagram(ipv4_datagram_t *datagram, int show_payload)
+{   
+    printf("\n\n_____________________\n\n");
+    printf("IPv4 DGRAM:\n");
+    printf("Version: %d\n", (datagram->version_and_ihl & 0xF0));
+    printf("IHL: %d\n", (datagram->version_and_ihl & 0x0F));
+    printf("DSCP: %d\n", (datagram->dscp_and_ecn &0xFC));
+    printf("ECN: %d\n", (datagram->dscp_and_ecn & 0x02));
+    printf("Total Length: %d\n", ntohs(datagram->total_length));
+    printf("Identification: %d\n", ntohs(datagram->identification));
+    printf("Flags: %d\n", (datagram->flags_and_fragment_offset & 0xE000));
+    printf("Fragment offset: %d\n", (datagram->flags_and_fragment_offset & 0x1000));
+    printf("TTL: %d\n", datagram->ttl);
+    printf("Protocol: %d\n", datagram->protocol);
+    printf("Header Checksum: %04X\n", ntohs(datagram->header_checksum));
+    
+    printf("IP Src: ");
+    for(int i = 0; i < 4; i++){
+        printf("%d", datagram->src_addr[i]);
+        if(i != 3) printf(".");
+    }
+    printf("\n");
+
+    printf("IP Dest: ");
+    for(int i = 0; i < 4; i++){
+        printf("%d", datagram->dest_addr[i]);
+        if(i != 3) printf(".");
+    }
+    printf("\n");
+
+    if(datagram->options != NULL){
+        printf("Options: \n");
+        for(int i = 0; i < datagram->options_length; i--){
+            printf("  %02X ", datagram->options[i]);
+            if ((i + 1) % 16 == 0) printf("\n");
+        }
+        printf("\n");
+    }
+
+    if(show_payload && datagram->payload != NULL){
+        printf("Payload: \n");
+        size_t payload_length = datagram->total_length - 20 - datagram->options_length; // Works even though options are not present
+                                                                                        // since ihl = 5, and (5-5) * 4 = 0
+        for(int i = 0; i < payload_length; i++){
+            printf("  %02X ", datagram->payload[i]);
+            if ((i + 1) % 16 == 0) printf("\n");
+        }
+    }
+
+    printf("\n\n_____________________\n\n");
 }
