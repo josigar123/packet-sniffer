@@ -1,0 +1,11 @@
+#ifndef TYPES_AND_ERRORS
+#define TYPES_AND_ERRORS
+
+#define FGETS_ERROR 2
+#define INTERFACE_READ_SUCCESS 3
+#define INTERFACE_READ_FAILURE 4
+#define MEMORY_ALLOCATION_FAILURE 5
+
+typedef unsigned char u_char;
+
+#endif // TYPES_AND_ERRORS
