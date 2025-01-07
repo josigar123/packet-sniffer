@@ -1,4 +1,11 @@
 #include "../include/ip_packet_parser.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <bsd/string.h>
+#include <stdint.h>
+#include <string.h>
 
 // GENERAL FUNCTIONS
 int is_ipv4_or_ipv6(const u_char *packet){
@@ -187,4 +194,28 @@ int validate_total_length_ipv4(uint16_t total_length){
 
 // IPv6 FUNCTIONS
 ipv6_datagram_t *parse_ipv6_datagram(const u_char * frame_payload){
+
+    ipv6_datagram_t *datagram = (ipv6_datagram_t *)malloc(sizeof(ipv6_datagram_t));
+    if(datagram == NULL){
+        fprintf(stderr, "parse_ipv6_datagram: memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int version;
+    if((version = is_ipv4_or_ipv6(frame_payload)) != IPV6){
+        fprintf(stderr, "parse_ipv6_datagram: error, wrong packet version: %d\n", version);
+        exit(EXIT_FAILURE);
+    }
+
+    memcpy(&datagram->version_traffic_class_flow_label, frame_payload, 4);
+    datagram->version_traffic_class_flow_label = ntohl(datagram->version_traffic_class_flow_label);
+
+    memcpy(&datagram->payload_length, frame_payload + 4, 2);
+    datagram->payload_length= ntohs(datagram->payload_length);
+
+    memcpy(&datagram->next_header, frame_payload + 6, 1);
+    memcpy(&datagram->hop_limit, frame_payload + 7, 1);
+
+    memcpy(datagram->src_addr, frame_payload + 8, 16);
+    memcpy(datagram->dest_addr, frame_payload + 24, 16);
 }

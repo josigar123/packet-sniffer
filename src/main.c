@@ -22,12 +22,12 @@ int main(void){
         printf("Error: %s\n", err_buf);
         return PCAP_ERROR;
     }
-
+    
     pcap_if_t* alldevsp = find_and_display_network_interfaces(err_buf);
 
     char* network_if;
     if(handle_interface_choice(&network_if) != INTERFACE_READ_SUCCESS){
-        fprintf(stderr, "handle_interface_choice: failed reading user input\n");
+        fprintf(stderr, "in main -> handle_interface_choice: failed reading user input\n");
         return INTERFACE_READ_FAILURE;
     }
 
@@ -49,7 +49,6 @@ int main(void){
 
     const u_char* data;
     struct pcap_pkthdr header;
-
     if(pcap_loop(handle, 0, packet_handler, NULL) < 0){
         fprintf(stderr, "Error: %s\n", pcap_geterr(handle));
         return PCAP_ERROR;
