@@ -1,4 +1,4 @@
-#include "./include/ethernet_frame_parser.h"
+#include "../include/ethernet_frame_parser.h"
 
 ethernet_frame_t* parse_ethernet_frame(const u_char *packet, const uint16_t packet_length){
 

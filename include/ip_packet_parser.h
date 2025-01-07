@@ -8,7 +8,7 @@
 #include <bsd/string.h>
 #include <stdint.h>
 #include <string.h>
-#include "./include/types_and_errors.h"
+#include "../include/types_and_errors.h"
 
 #define IPV4 4
 #define IPV6 6

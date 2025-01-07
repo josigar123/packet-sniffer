@@ -1,4 +1,4 @@
-#include "./include/network_if_finder.h"
+#include "../include/network_if_finder.h"
 
 int handle_interface_choice(char** network_if){
 

@@ -7,10 +7,10 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "./include/types_and_errors.h"
-#include "./include/ethernet_frame_parser.h"
-#include "./include/ip_packet_parser.h"
-#include "./include/network_if_finder.h"
+#include "../include/types_and_errors.h"
+#include "../include/ethernet_frame_parser.h"
+#include "../include/ip_packet_parser.h"
+#include "../include/network_if_finder.h"
 
 void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 

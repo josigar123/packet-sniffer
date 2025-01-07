@@ -9,7 +9,7 @@
 #include <bsd/string.h>
 #include <stdint.h>
 #include <string.h>
-#include "./include/types_and_errors.h"
+#include "../include/types_and_errors.h"
 
 #define MAX_NETWORK_IF_LEN 256
 

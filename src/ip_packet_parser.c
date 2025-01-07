@@ -1,4 +1,4 @@
-#include "./include/ip_packet_parser.h"
+#include "../include/ip_packet_parser.h"
 
 // GENERAL FUNCTIONS
 int is_ipv4_or_ipv6(const u_char *packet){
