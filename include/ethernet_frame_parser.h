@@ -8,6 +8,7 @@
 #include <bsd/string.h>
 #include <stdint.h>
 #include <string.h>
+#include "./include/types_and_errors.h"
 
 #define MAX_PACKET_SIZE 65536
 #define ETHERNET_MAX_PAYLOAD 1500
